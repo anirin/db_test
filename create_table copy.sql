@@ -1,7 +1,7 @@
 CREATE TYPE authority AS ENUM ('Manager', 'Staff');
-CREATE TYPE return_action AS ENUM('Refund', 'Exchange')
-CREATE TYPE approval_status AS ENUM('Pending', 'Approved', 'Denied')
-CREATE TYPE task_status AS ENUM('Completed', 'In_progress', 'Not_started')
+CREATE TYPE return_action AS ENUM('Refund', 'Exchange');
+CREATE TYPE approval_status AS ENUM('Pending', 'Approved', 'Denied');
+CREATE TYPE task_status AS ENUM('Completed', 'In_progress', 'Not_started');
 CREATE TYPE payment_method AS ENUM (
     'Credit Card Payment',
     'Cod',
@@ -87,14 +87,14 @@ CREATE TABLE IF NOT EXISTS return_reasons (
 );
 
 CREATE INDEX idx_number_return_reasons ON return_reasons (store_id, number);
-CREATE INDEX idx_number_return_reasons ON return_reasons (store_id, content);
+CREATE INDEX idx_content_return_reasons ON return_reasons (store_id, content);
 
 CREATE TABLE IF NOT EXISTS managers (
     id CHAR(26) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password CHAR(64) NOT NULL,
-    authority authority NOT NULL DEFAULT 'Manager'
+    authority authority NOT NULL DEFAULT 'Manager',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS items (
     id CHAR(100) NOT NULL PRIMARY KEY,
     name CHAR(100) NOT NULL,
     maker CHAR(100) NOT NULL,
-    stock INT CHECK (stock >= 0) NOT NULL
+    stock INT CHECK (stock >= 0) NOT NULL,
     store_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS orders (
     address TEXT NOT NULL,
     delivered_at DATE NOT NULL,
     store_id CHAR(26) NOT NULL,
-    payment_method payment_method NOT NULL
+    payment_method payment_method NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
@@ -139,13 +139,13 @@ CREATE TABLE IF NOT EXISTS order_items (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_orders ON order_items (store_id, id);
+CREATE INDEX idx_id_order_items ON order_items (store_id, id);
 
 CREATE TABLE IF NOT EXISTS return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     return_acceptance BOOLEAN NOT NULL DEFAULT TRUE,
     return_deadline INT CHECK (return_deadline >= 0) NOT NULL,
-    responsibility TEXT NOT NULL
+    responsibility TEXT NOT NULL,
     store_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS return_item_requests (
     handling_item_id CHAR(26) NOT NULL,
     return_reason CHAR(26) NOT NULL,
     description TEXT NOT NULL,
-	return_action return_action NOT NULL DEFAULT 'Exchange' 
+	return_action return_action NOT NULL DEFAULT 'Exchange',
     completed_at DATE,
     return_request_id CHAR(26) NOT NULL,
     item_id CHAR(100) NOT NULL,
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS images (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_images ON images (return_request_id, id);
+CREATE INDEX idx_id_images ON images (return_item_requests_id, id);
 
 CREATE TABLE IF NOT EXISTS movies (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS movies (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_movies ON movies (return_request_id, id);
+CREATE INDEX idx_id_movies ON movies (return_item_requests_id, id);
 
 CREATE TABLE IF NOT EXISTS comments (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS comments (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_comments ON comments (return_request_id, id);
+CREATE INDEX idx_id_comments ON comments (return_item_requests_id, id);
 
 CREATE TABLE IF NOT EXISTS approval_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -246,18 +246,18 @@ CREATE TABLE IF NOT EXISTS approval_status (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_approval_status ON approval_status (return_request_id, id);
+CREATE INDEX idx_id_approval_status ON approval_status (return_item_requests_id, id);
 
 CREATE TABLE IF NOT EXISTS task_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
-	status task_status NOT NULL
+	status task_status NOT NULL,
     return_item_request_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_task_status ON task_status (return_request_id, id);
+CREATE INDEX idx_id_task_status ON task_status (return_item_requests_id, id);
 
 CREATE TABLE IF NOT EXISTS rel_manager_store (
     id CHAR(26) NOT NULL PRIMARY KEY,
