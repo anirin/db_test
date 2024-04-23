@@ -105,10 +105,13 @@ CREATE TABLE IF NOT EXISTS items (
     name CHAR(100) NOT NULL,
     maker CHAR(100) NOT NULL,
     stock INT CHECK (stock >= 0) NOT NULL
+    store_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_id_items ON items (store_id, id);
 
 CREATE TABLE IF NOT EXISTS orders (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -116,27 +119,34 @@ CREATE TABLE IF NOT EXISTS orders (
     email VARCHAR(100) NOT NULL,
     address TEXT NOT NULL,
     delivered_at DATE NOT NULL,
+    store_id CHAR(26) NOT NULL,
     payment_method payment_method NOT NULL
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_orders ON orders (store_id, id);
+
 CREATE TABLE IF NOT EXISTS order_items (
     id CHAR(26) NOT NULL PRIMARY KEY,
     item_id CHAR(100) NOT NULL,
     quantity INT CHECK (quantity >= 0) NOT NULL,
     order_id CHAR(100) NOT NULL,
+    store_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_id_orders ON orders (store_id, order_id);
 
 CREATE TABLE IF NOT EXISTS return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     return_acceptance BOOLEAN NOT NULL DEFAULT TRUE,
     return_deadline INT CHECK (return_deadline >= 0) NOT NULL,
     responsibility TEXT NOT NULL
+    store_id CHAR(26) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
@@ -153,6 +163,7 @@ CREATE TABLE IF NOT EXISTS return_requests (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_return_requests ON return_requests (store_id, id);
 
 CREATE TABLE IF NOT EXISTS handling_items (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -164,6 +175,8 @@ CREATE TABLE IF NOT EXISTS handling_items (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_id_handling_items ON handling_items (id, store_id);
 
 CREATE TABLE IF NOT EXISTS return_item_requests (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -179,6 +192,7 @@ CREATE TABLE IF NOT EXISTS return_item_requests (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_return_item_requests ON return_item_requests (id, return_request_id);
 
 CREATE TABLE IF NOT EXISTS default_return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -198,6 +212,8 @@ CREATE TABLE IF NOT EXISTS images (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_images ON images (id, return_request_id);
+
 CREATE TABLE IF NOT EXISTS movies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     movie TEXT NOT NULL,
@@ -206,6 +222,8 @@ CREATE TABLE IF NOT EXISTS movies (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_id_movies ON movies (id, return_request_id);
 
 CREATE TABLE IF NOT EXISTS comments (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -217,6 +235,8 @@ CREATE TABLE IF NOT EXISTS comments (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_comments ON comments (id, return_request_id);
+
 CREATE TABLE IF NOT EXISTS approval_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
     status approval_status NOT NULL DEFAULT 'Pending',
@@ -226,6 +246,8 @@ CREATE TABLE IF NOT EXISTS approval_status (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_id_approval_status ON approval_status (id, return_request_id);
+
 CREATE TABLE IF NOT EXISTS task_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
 	status task_status NOT NULL
@@ -234,6 +256,8 @@ CREATE TABLE IF NOT EXISTS task_status (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP
 );
+
+CREATE INDEX idx_id_task_status ON task_status (id, return_request_id);
 
 CREATE TABLE IF NOT EXISTS rel_manager_store (
     id CHAR(26) NOT NULL PRIMARY KEY,
