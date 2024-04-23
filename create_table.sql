@@ -1,199 +1,263 @@
--- 店舗関連
-CREATE TABLE stores (
+CREATE TYPE authority AS ENUM ('Manager', 'Staff');
+CREATE TYPE return_action AS ENUM('Refund', 'Exchange')
+CREATE TYPE approval_status AS ENUM('Pending', 'Approved', 'Denied')
+CREATE TYPE task_status AS ENUM('Completed', 'In_progress', 'Not_started')
+CREATE TYPE payment_method AS ENUM (
+    'Credit Card Payment',
+    'Cod',
+    'Bank Transfer',
+    'Cvs Payment',
+    'Post Payment',
+    'Cash Payment',
+    'Pay Easy',
+    'Paypal',
+    'No Payment',
+    'Carrier Billing',
+    'Electronic Money Payment',
+    'Postal Transfer',
+    'Registered Mail',
+    'Sales On Credit',
+    'Platform Payment',
+    'Amazon Pay',
+    'Amazon Payment',
+    'Rakuten Pay',
+    'Rakuten Bank Payment',
+    'Rakuten Edy Payment',
+    'Rakuten Id Payment',
+    'Yahoo Wallet',
+    'Yahoo Carrier Billing',
+    'Line Pay',
+    'Np Atobarai',
+    'Nissen Collect Post Payment',
+    'D Barai',
+    'Dsk Cvs Payment',
+    'Web Money',
+    'Paypay Balance Payment',
+    'Qoo10 Payment',
+    'Shopify Payment Gateway'
+);
+
+CREATE TABLE IF NOT EXISTS stores (
     id CHAR(26) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    shop_url VARCHAR(100) NOT NULL UNIQUE,
+    url VARCHAR(100) NOT NULL UNIQUE,
     receive_email VARCHAR(100) NOT NULL,
-    logistics_api_key VARCHAR(100) NOT NULL UNIQUE
+    logistics_api_key VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE email_templates (
+CREATE TABLE IF NOT EXISTS email_templates (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    title VARCHAR(150) NOT NULL UNIQUE,
-    subject TEXT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    subject VARCHAR(150) NOT NULL,
     content TEXT NOT NULL,
-    auto_flag BOOLEAN NOT NULL DEFAULT FALSE,
+    is_auto_reply BOOLEAN NOT NULL DEFAULT FALSE,
     store_id CHAR(26) NOT NULL,
-    FOREIGN KEY (store_id) REFERENCES stores(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE categories (
+CREATE INDEX idx_email_templates ON email_templates (store_id, title);
+
+CREATE TABLE IF NOT EXISTS categories (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    category_number INT UNSIGNED NOT NULL UNIQUE,
-    content VARCHAR(100) NOT NULL UNIQUE,
+    number INT NOT NULL CHECK (number >= 0),
+    content VARCHAR(100) NOT NULL,
     store_id CHAR(26) NOT NULL,
-    FOREIGN KEY (store_id) REFERENCES stores(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE return_reasons (
+CREATE INDEX idx_content_categories ON categories (store_id, content);
+CREATE INDEX idx_unmber_categories ON categories (store_id, number);
+
+CREATE TABLE IF NOT EXISTS return_reasons (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    reason_number INT UNSIGNED NOT NULL UNIQUE,
-    content CHAR(100) NOT NULL UNIQUE,
-    responsibility SET('customer', 'business', 'shipping_company') NOT NULL,
+    number INT CHECK (number >= 0) NOT NULL,
+    content VARCHAR(100) NOT NULL,
+	responsibility TEXT NOT NULL,
     store_id CHAR(26) NOT NULL,
-    FOREIGN KEY (store_id) REFERENCES stores(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
+CREATE INDEX idx_number_return_reasons ON categories (store_id, number);
+CREATE INDEX idx_number_return_reasons ON categories (store_id, content);
 
--- マネージャー
-CREATE TABLE managers (
+CREATE TABLE IF NOT EXISTS managers (
     id CHAR(26) NOT NULL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password CHAR(64) NOT NULL,
-    authority ENUM('director', 'staff') NOT NULL DEFAULT 'director'
+    authority authority NOT NULL DEFAULT 'Manager'
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 商品情報
-
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     id CHAR(100) NOT NULL PRIMARY KEY,
-    product_name CHAR(100) NOT NULL,
+    name CHAR(100) NOT NULL,
     maker CHAR(100) NOT NULL,
-    stock INT UNSIGNED NOT NULL
+    stock INT CHECK (stock >= 0) NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 注文情報
-
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id CHAR(26) NOT NULL PRIMARY KEY,
     customer_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
     address TEXT NOT NULL,
     delivered_at DATE NOT NULL,
-    payment_method ENUM('credit', 'cash') NOT NULL
+    payment_method payment_method NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 購入情報
-
-CREATE TABLE order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id CHAR(26) NOT NULL PRIMARY KEY,
     item_id CHAR(100) NOT NULL,
-    quantity INT UNSIGNED NOT NULL,
+    quantity INT CHECK (quantity >= 0) NOT NULL,
     order_id CHAR(100) NOT NULL,
-    FOREIGN KEY (item_id) REFERENCES items(id),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 返品ポリシー
-CREATE TABLE return_policies (
+CREATE TABLE IF NOT EXISTS return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     return_acceptance BOOLEAN NOT NULL DEFAULT TRUE,
-    return_deadline INT UNSIGNED NOT NULL,
-    responsibility SET('merchant_related', 'customer_related', 'courier_related') NOT NULL
+    return_deadline INT CHECK (return_deadline >= 0) NOT NULL,
+    responsibility TEXT NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 返品申請
-
-CREATE TABLE return_requests (
+CREATE TABLE IF NOT EXISTS return_requests (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    request_number CHAR(17) NOT NULL,
+    number CHAR(17) NOT NULL,
     requested_at DATE NOT NULL,
     store_id CHAR(26) NOT NULL,
     order_id CHAR(26) NOT NULL,
-    FOREIGN KEY (store_id) REFERENCES stores(id),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 
--- 取り扱い商品
-CREATE TABLE handling_items (
+CREATE TABLE IF NOT EXISTS handling_items (
     id CHAR(26) NOT NULL PRIMARY KEY,
     category_id CHAR(26) NOT NULL,
     return_policy_id CHAR(26) NOT NULL,
     store_id CHAR(26) NOT NULL,
     item_id CHAR(26) NOT NULL,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (return_policy_id) REFERENCES return_policies(id),
-    FOREIGN KEY (store_id) REFERENCES stores(id),
-    FOREIGN KEY (item_id) REFERENCES items(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE return_item_requests (
+CREATE TABLE IF NOT EXISTS return_item_requests (
     id CHAR(26) NOT NULL PRIMARY KEY,
     handling_item_id CHAR(26) NOT NULL,
     return_reason CHAR(26) NOT NULL,
     description TEXT NOT NULL,
-    return_action ENUM('refund', 'exchange') NOT NULL DEFAULT 'exchange',
+	return_action return_action NOT NULL DEFAULT 'Exchange' 
     completed_at DATE,
     return_request_id CHAR(26) NOT NULL,
     item_id CHAR(100) NOT NULL,
-    FOREIGN KEY (handling_item_id) REFERENCES handling_items(id),
-    FOREIGN KEY (return_reason) REFERENCES return_reasons(id),
-    FOREIGN KEY (return_request_id) REFERENCES return_requests(id),
-    FOREIGN KEY (item_id) REFERENCES items(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 
-CREATE TABLE default_return_policies (
+CREATE TABLE IF NOT EXISTS default_return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     return_policy_id CHAR(26) NOT NULL,
     store_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_policy_id) REFERENCES return_policies(id),
-    FOREIGN KEY (store_id) REFERENCES stores(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE photos (
+CREATE TABLE IF NOT EXISTS images (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    picture TEXT NOT NULL,
+    image TEXT NOT NULL,
     return_item_requests_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_requests_id) REFERENCES return_item_requests(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE movies (
+CREATE TABLE IF NOT EXISTS movies (
     id CHAR(26) NOT NULL PRIMARY KEY,
     movie TEXT NOT NULL,
     return_item_requests_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_requests_id) REFERENCES return_item_requests(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 個別返品申請関連
-
-CREATE TABLE comments (
+CREATE TABLE IF NOT EXISTS comments (
     id CHAR(26) NOT NULL PRIMARY KEY,
     content TEXT NOT NULL,
     sent_at DATE NOT NULL,
     return_item_request_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_request_id) REFERENCES return_item_requests(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE approval_status (
+CREATE TABLE IF NOT EXISTS approval_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    status ENUM('pending', 'approved', 'denied') NOT NULL DEFAULT 'pending',
-    updated_at DATE NOT NULL,
+    status approval_status NOT NULL DEFAULT 'Pending',
     return_item_request_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_request_id) REFERENCES return_item_requests(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE response_status (
+CREATE TABLE IF NOT EXISTS task_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
-    status ENUM('completed', 'in_progress', 'not_started') NOT NULL,
-    updated_at DATE NOT NULL,
+	status task_status NOT NULL
     return_item_request_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_request_id) REFERENCES return_item_requests(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
--- 中間テーブル
-CREATE TABLE rel_manager_store (
+CREATE TABLE IF NOT EXISTS rel_manager_store (
     id CHAR(26) NOT NULL PRIMARY KEY,
     manager_id CHAR(26) NOT NULL,
     store_id CHAR(26) NOT NULL,
-    FOREIGN KEY (manager_id) REFERENCES managers(id),
-    FOREIGN KEY (store_id) REFERENCES stores(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE rel_category_return_reason (
+CREATE TABLE IF NOT EXISTS rel_category_return_reason (
     id CHAR(26) NOT NULL PRIMARY KEY,
     category_id CHAR(26) NOT NULL,
     return_reason_id CHAR(26) NOT NULL,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (return_reason_id) REFERENCES return_reasons(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
-CREATE TABLE rel_return_item_requests_return_reason (
+CREATE TABLE IF NOT EXISTS rel_return_item_requests_return_reason (
     id CHAR(26) NOT NULL PRIMARY KEY,
     return_item_requests_id CHAR(26) NOT NULL,
     return_reason_id CHAR(26) NOT NULL,
-    FOREIGN KEY (return_item_requests_id) REFERENCES return_item_requests(id),
-    FOREIGN KEY (return_reason_id) REFERENCES return_reasons(id)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
