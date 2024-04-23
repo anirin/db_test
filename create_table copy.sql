@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS return_reasons (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_number_return_reasons ON categories (store_id, number);
-CREATE INDEX idx_number_return_reasons ON categories (store_id, content);
+CREATE INDEX idx_number_return_reasons ON return_reasons (store_id, number);
+CREATE INDEX idx_number_return_reasons ON return_reasons (store_id, content);
 
 CREATE TABLE IF NOT EXISTS managers (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_orders ON orders (store_id, order_id);
+CREATE INDEX idx_id_orders ON order_items (store_id, id);
 
 CREATE TABLE IF NOT EXISTS return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS handling_items (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_handling_items ON handling_items (id, store_id);
+CREATE INDEX idx_id_handling_items ON handling_items (store_id, id);
 
 CREATE TABLE IF NOT EXISTS return_item_requests (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS return_item_requests (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_return_item_requests ON return_item_requests (id, return_request_id);
+CREATE INDEX idx_id_return_item_requests ON return_item_requests (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS default_return_policies (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS images (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_images ON images (id, return_request_id);
+CREATE INDEX idx_id_images ON images (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS movies (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS movies (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_movies ON movies (id, return_request_id);
+CREATE INDEX idx_id_movies ON movies (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS comments (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS comments (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_comments ON comments (id, return_request_id);
+CREATE INDEX idx_id_comments ON comments (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS approval_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS approval_status (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_approval_status ON approval_status (id, return_request_id);
+CREATE INDEX idx_id_approval_status ON approval_status (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS task_status (
     id CHAR(26) NOT NULL PRIMARY KEY,
@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS task_status (
     deleted_at TIMESTAMP
 );
 
-CREATE INDEX idx_id_task_status ON task_status (id, return_request_id);
+CREATE INDEX idx_id_task_status ON task_status (return_request_id, id);
 
 CREATE TABLE IF NOT EXISTS rel_manager_store (
     id CHAR(26) NOT NULL PRIMARY KEY,
